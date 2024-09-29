@@ -1,6 +1,8 @@
 from django.db import models
 from common.models import CommonModel
 
+# Tweet / tweet, like
+
 
 class Tweet(CommonModel):
     payload = models.TextField()
