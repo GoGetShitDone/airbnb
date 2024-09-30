@@ -5,20 +5,24 @@ from .models import Tweet, Like
 
 
 @admin.register(Tweet)
-class Tweet(admin.ModelAdmin):
+class TweetAdmin(admin.ModelAdmin):
     list_display = (
         "__str__",
         "payload",
         "user",
+        "total_likes",
         "created_at",
         "updated_at",
     )
 
     list_filter = ("created_at",)
 
+    def total_likes(self, obj):
+        return obj.likes.count()
+
 
 @admin.register(Like)
-class Like(admin.ModelAdmin):
+class LikeAdmin(admin.ModelAdmin):
     list_display = (
         "__str__",
         "user",
