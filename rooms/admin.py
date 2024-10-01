@@ -2,14 +2,26 @@ from django.contrib import admin
 from .models import Room, Amenity
 
 
+@admin.action(description="Set all prices to Zero")
+def reset_prices(model_admin, request, rooms,):
+    for room in rooms.all():
+        room.price = 0
+        room.save()
+
+
 @admin.register(Room)
 class RoomAdmin(admin.ModelAdmin):
+
+    actions = (reset_prices,)
+
     list_display = (
         "name",
         "price",
         "kind",
         "owner",
         "total_amenities",
+        "review_count",
+        "rating",
         "created_at",
         "updated_at",
     )
@@ -27,8 +39,15 @@ class RoomAdmin(admin.ModelAdmin):
         "updated_at",
     )
 
-    def total_amenities(self, room):
-        return room.amenities.count()
+    search_fields = (
+        "name",
+        "^price",
+        "=owner__username",
+    )
+
+    # models 에도 아래와 같은 기능의 함수가 존재함!
+    # def total_amenities(self, room):
+    #     return room.amenities.count()
 
 
 @admin.register(Amenity)
