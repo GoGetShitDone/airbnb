@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if not not_found %}{{room.name}}{% else %}404 Not Found{% endif %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-emerald-100">
+    <div class="container mx-auto px-4 py-8">
+        {% if not not_found %}
+            <h1 class="text-3xl font-bold mb-4">{{room.name}}</h1>
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl text-gray-700">{{room.country}} / {{room.city}}</h2>
+                        <span class="text-2xl font-semibold text-green-600">₩{{room.price}}/박</span>
+                    </div>
+                    <p class="text-gray-600 mb-4">{{room.description}}</p>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <h3 class="font-semibold mb-2">상세 정보:</h3>
+                            <ul class="list-disc list-inside text-gray-600">
+                                <li>방 종류: {{room.get_kind_display}}</li>
+                                <li>방 개수: {{room.rooms}}</li>
+                                <li>화장실 개수: {{room.toilets}}</li>
+                                <li>반려동물 동반: {% if room.pet_friendly %}가능{% else %}불가능{% endif %}</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold mb-2">편의시설:</h3>
+                            <ul class="list-disc list-inside text-gray-600">
+                                {% for amenity in room.amenities.all %}
+                                    <li>{{amenity.name}}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <h3 class="font-semibold mb-2">주소:</h3>
+                        <p class="text-gray-600">{{room.address}}</p>
+                    </div>
+                    <div class="mb-4">
+                        <h3 class="font-semibold mb-2">카테고리:</h3>
+                        <span class="bg-blue-100 text-blue-800 text-sm font-medium mr-2 px-2.5 py-0.5 rounded">{{room.category.name}}</span>
+                    </div>
+                    <div class="mt-6">
+                        <h3 class="font-semibold mb-2">호스트 정보:</h3>
+                        <p class="text-gray-600">{{room.owner.username}}</p>
+                    </div>
+                    <div class="mt-6">
+                        <h3 class="font-semibold mb-2">평점:</h3>
+                        <p class="text-gray-600">{{room.rating}} ({{room.review_count}} 개의 리뷰)</p>
+                    </div>
+                    <div class="mt-6">
+                        <h3 class="font-semibold mb-2">호스트의 트윗:</h3>
+                        {% for tweet in room.owner.tweets.all %}
+                        <div class="bg-gray-100 p-3 rounded mb-3">
+                            <p class="text-gray-700">{{tweet.payload}}</p>
+                            <p class="text-sm text-gray-500 mt-2">좋아요: {{tweet.likes.count}}</p>
+                        </div>
+                        {% empty %}
+                        <p class="text-gray-600">이 호스트의 트윗이 없습니다.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="text-center py-16">
+                <h1 class="text-4xl font-bold text-red-600 mb-4">404 Not Found</h1>
+                <p class="text-xl text-gray-600">요청하신 방을 찾을 수 없습니다.</p>
+                <a href="/" class="mt-8 inline-block bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600">홈으로 돌아가기</a>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
+
+
+<!-- {% if not not_found %}
+<h1>{{room.name}}</h1>
+<h3>{{room.country}}/{{room.city}}</h3>
+<h4>{{room.price}}</h4>
+<p>{{room.description}}</p>
+<h5>{{room.category.name}}</h5>
+{% else %}
+<h1>404 not found</h1>
+{% endif %} -->
