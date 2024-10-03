@@ -3,31 +3,19 @@ from .models import Tweet, Like
 from users.models import User
 
 
-class TinyUserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = (
-            "pk",
-            "username",
-        )
+class TinyUserSerializer(serializers.Serializer):
+    pk = serializers.IntegerField()
+    username = serializers.CharField()
 
 
-class TweetSerializer(serializers.ModelSerializer):
+class TweetSerializer(serializers.Serializer):
+    pk = serializers.IntegerField(read_only=True)
     user = TinyUserSerializer(read_only=True)
+    payload = serializers.CharField()
+    created_at = serializers.DateTimeField(read_only=True)
+    updated_at = serializers.DateTimeField(read_only=True)
     is_liked = serializers.SerializerMethodField()
     likes_count = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Tweet
-        fields = (
-            "pk",
-            "user",
-            "payload",
-            "created_at",
-            "updated_at",
-            "is_liked",
-            "likes_count",
-        )
 
     def get_is_liked(self, tweet):
         request = self.context.get("request")
@@ -38,16 +26,22 @@ class TweetSerializer(serializers.ModelSerializer):
     def get_likes_count(self, tweet):
         return tweet.likes.count()
 
+    def create(self, validated_data):
+        return Tweet.objects.create(**validated_data)
 
-class LikeSerializer(serializers.ModelSerializer):
+    def update(self, instance, validated_data):
+        instance.payload = validated_data.get('payload', instance.payload)
+        instance.save()
+        return instance
+
+
+class LikeSerializer(serializers.Serializer):
+    pk = serializers.IntegerField(read_only=True)
     user = TinyUserSerializer(read_only=True)
+    liked_tweet = serializers.PrimaryKeyRelatedField(
+        queryset=Tweet.objects.all())
+    created_at = serializers.DateTimeField(read_only=True)
+    updated_at = serializers.DateTimeField(read_only=True)
 
-    class Meta:
-        model = Like
-        fields = (
-            "pk",
-            "user",
-            "liked_tweet",
-            "created_at",
-            "updated_at",
-        )
+    def create(self, validated_data):
+        return Like.objects.create(**validated_data)

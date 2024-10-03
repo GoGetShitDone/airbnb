@@ -1,81 +1,70 @@
 from rest_framework.decorators import api_view
-from rest_framework.exceptions import NotFound, NotAuthenticated, ParseError
 from rest_framework.response import Response
-from rest_framework.status import HTTP_204_NO_CONTENT
+from rest_framework import status
 from .models import Tweet, Like
 from .serializers import TweetSerializer, LikeSerializer
+from users.models import User
+from django.shortcuts import get_object_or_404
 
 
-@api_view(["GET", "POST"])
+@api_view(['GET', 'POST'])
 def tweets(request):
-    if request.method == "GET":
+    if request.method == 'GET':
         all_tweets = Tweet.objects.all()
         serializer = TweetSerializer(
-            all_tweets, many=True, context={"request": request})
+            all_tweets, many=True, context={'request': request})
         return Response(serializer.data)
-    elif request.method == "POST":
-        if not request.user.is_authenticated:
-            raise NotAuthenticated
-        serializer = TweetSerializer(data=request.data)
-        if serializer.is_valid():
-            new_tweet = serializer.save(user=request.user)
-            return Response(TweetSerializer(new_tweet).data)
-        else:
-            return Response(serializer.errors)
-
-
-@api_view(["GET", "PUT", "DELETE", "POST"])
-def tweet(request, pk):
-    try:
-        tweet = Tweet.objects.get(pk=pk)
-    except Tweet.DoesNotExist:
-        raise NotFound
-
-    if request.method == "GET":
-        serializer = TweetSerializer(tweet, context={"request": request})
-        return Response(serializer.data)
-
-    elif request.method == "PUT":
-        if not request.user.is_authenticated or request.user != tweet.user:
-            raise NotAuthenticated
+    elif request.method == 'POST':
         serializer = TweetSerializer(
-            tweet,
-            data=request.data,
-            partial=True,
-        )
+            data=request.data, context={'request': request})
         if serializer.is_valid():
-            updated_tweet = serializer.save()
-            return Response(TweetSerializer(updated_tweet).data)
-        else:
-            return Response(serializer.errors)
-
-    elif request.method == "DELETE":
-        if not request.user.is_authenticated or request.user != tweet.user:
-            raise NotAuthenticated
-        tweet.delete()
-        return Response(status=HTTP_204_NO_CONTENT)
-
-    elif request.method == "POST":
-        if not request.user.is_authenticated:
-            raise NotAuthenticated
-
-        action = request.data.get('action')
-        if not action:
-            raise ParseError("'action' field is required")
-
-        if action == "like":
-            if Like.objects.filter(user=request.user, liked_tweet=tweet).exists():
-                return Response({"detail": "You have already liked this tweet."})
-            Like.objects.create(user=request.user, liked_tweet=tweet)
-            return Response({"detail": "Tweet liked successfully."})
-
-        elif action == "unlike":
             try:
-                like = Like.objects.get(user=request.user, liked_tweet=tweet)
-            except Like.DoesNotExist:
-                return Response({"detail": "You haven't liked this tweet."})
-            like.delete()
-            return Response({"detail": "Tweet unliked successfully."})
+                user = User.objects.get(pk=request.user.pk)
+            except User.DoesNotExist:
+                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+            tweet = serializer.save(user=user)
+            return Response(TweetSerializer(tweet, context={'request': request}).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        else:
-            raise ParseError("Invalid action. Use 'like' or 'unlike'.")
+
+@api_view(['GET', 'PUT', 'DELETE', 'POST'])
+def tweet(request, pk):
+    tweet = get_object_or_404(Tweet, pk=pk)
+
+    if request.method == 'GET':
+        serializer = TweetSerializer(tweet, context={'request': request})
+        return Response(serializer.data)
+
+    elif request.method == 'PUT':
+        if request.user != tweet.user:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        serializer = TweetSerializer(
+            tweet, data=request.data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        if request.user != tweet.user:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        tweet.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    elif request.method == 'POST':
+        action = request.data.get('action')
+        if action not in ['like', 'unlike']:
+            return Response({"error": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(pk=request.user.pk)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if action == 'like':
+            like, created = Like.objects.get_or_create(
+                user=user, liked_tweet=tweet)
+            return Response({"message": "Tweet liked"}, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+        elif action == 'unlike':
+            Like.objects.filter(user=user, liked_tweet=tweet).delete()
+            return Response({"message": "Tweet unliked"}, status=status.HTTP_200_OK)
