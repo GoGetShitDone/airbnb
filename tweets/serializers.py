@@ -2,20 +2,20 @@ from rest_framework import serializers
 from .models import Tweet, Like
 from users.models import User
 
+class TinyUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('pk', 'username')
 
-class TinyUserSerializer(serializers.Serializer):
-    pk = serializers.IntegerField()
-    username = serializers.CharField()
-
-
-class TweetSerializer(serializers.Serializer):
-    pk = serializers.IntegerField(read_only=True)
+class TweetSerializer(serializers.ModelSerializer):
     user = TinyUserSerializer(read_only=True)
-    payload = serializers.CharField()
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True)
     is_liked = serializers.SerializerMethodField()
     likes_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Tweet
+        fields = ('pk', 'user', 'payload', 'created_at', 'updated_at', 'is_liked', 'likes_count')
+        read_only_fields = ('pk', 'created_at', 'updated_at')
 
     def get_is_liked(self, tweet):
         request = self.context.get("request")
@@ -26,22 +26,10 @@ class TweetSerializer(serializers.Serializer):
     def get_likes_count(self, tweet):
         return tweet.likes.count()
 
-    def create(self, validated_data):
-        return Tweet.objects.create(**validated_data)
-
-    def update(self, instance, validated_data):
-        instance.payload = validated_data.get('payload', instance.payload)
-        instance.save()
-        return instance
-
-
-class LikeSerializer(serializers.Serializer):
-    pk = serializers.IntegerField(read_only=True)
+class LikeSerializer(serializers.ModelSerializer):
     user = TinyUserSerializer(read_only=True)
-    liked_tweet = serializers.PrimaryKeyRelatedField(
-        queryset=Tweet.objects.all())
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True)
-
-    def create(self, validated_data):
-        return Like.objects.create(**validated_data)
+    
+    class Meta:
+        model = Like
+        fields = ('pk', 'user', 'liked_tweet', 'created_at', 'updated_at')
+        read_only_fields = ('pk', 'created_at', 'updated_at')

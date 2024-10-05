@@ -2,25 +2,24 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # Room URLs
-    path("", views.RoomViewSet.as_view({
+    # Photo
+    path("photos/", views.PhotoViewSet.as_view({
         "get": "list",
         "post": "create",
     })),
-    path("<int:pk>", views.RoomViewSet.as_view({
+    path("photos/<int:pk>", views.PhotoViewSet.as_view({
         "get": "retrieve",
         "put": "update",
         "patch": "partial_update",
         "delete": "destroy",
     })),
-
-
-    # Amenity URLs
-    path("amenity/", views.AmenityViewSet.as_view({
+    
+    # Video
+    path("videos/", views.VideoViewSet.as_view({
         "get": "list",
         "post": "create",
     })),
-    path("amenity/<int:pk>", views.AmenityViewSet.as_view({
+    path("videos/<int:pk>", views.VideoViewSet.as_view({
         "get": "retrieve",
         "put": "update",
         "patch": "partial_update",
