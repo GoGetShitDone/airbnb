@@ -2,28 +2,11 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # Room URLs
-    path("", views.RoomViewSet.as_view({
-        "get": "list",
-        "post": "create",
-    })),
-    path("<int:pk>", views.RoomViewSet.as_view({
-        "get": "retrieve",
-        "put": "update",
-        "patch": "partial_update",
-        "delete": "destroy",
-    })),
+    # Room url
+    path("", views.Rooms.as_view()),
 
-
-    # Amenity URLs
-    path("amenity/", views.AmenityViewSet.as_view({
-        "get": "list",
-        "post": "create",
-    })),
-    path("amenity/<int:pk>", views.AmenityViewSet.as_view({
-        "get": "retrieve",
-        "put": "update",
-        "patch": "partial_update",
-        "delete": "destroy",
-    })),
+    # Amenity urls
+    path("amenities/", views.Amenities.as_view()),
+    path("amenities/<int:pk>", views.AmenityDetail.as_view()),
+    
 ]

@@ -1,26 +1,38 @@
-from rest_framework import serializers
-from .models import Room, Amenity
-from users.models import User
+from rest_framework.serializers import ModelSerializer
+from .models import Amenity, Room
+from users.serializers import TinyUserSerializer
+from categories.serializers import CategorySerializer
 
-class TinyUserSerializer(serializers.ModelSerializer):
+class AmenitySerializer(ModelSerializer):
     class Meta:
-        model = User
-        fields = ('pk', 'username')
+        model = Amenity
+        fields = (
+            "name",
+            "description",
+        )
 
-class RoomSerializer(serializers.ModelSerializer):
-    user = TinyUserSerializer(read_only=True)
+class RoomDetailSerializer(ModelSerializer):
+    owner = TinyUserSerializer(read_only=True)
+    amenities = AmenitySerializer(
+        read_only=True,
+        many=True,
+    )
+    category = CategorySerializer(
+        read_only=True,
+    )
 
     class Meta:
         model = Room
-        fields = (
-            'pk', 'name', 'country', 'city', 'price', 'rooms', 'toilets',
-            'description', 'address', 'pet_friendly', 'kind', 'user',
-            'amenities', 'category', 'created_at', 'updated_at'
-        )
-        read_only_fields = ('pk', 'created_at', 'updated_at')
+        fields = "__all__"
 
-class AmenitySerializer(serializers.ModelSerializer):
+class RoomListSerializer(ModelSerializer):
     class Meta:
-        model = Amenity
-        fields = ('pk', 'name', 'description', 'created_at', 'updated_at')
-        read_only_fields = ('pk', 'created_at', 'updated_at')
+        model = Room
+        fields = (
+            "pk",
+            "name",
+            "country",
+            "city",
+            "price",
+        )
+

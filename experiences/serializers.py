@@ -1,12 +1,7 @@
-from rest_framework import serializers
-from .models import Experience
+from rest_framework.serializers import ModelSerializer
+from .models import Perk
 
-class ExperienceSerializer(serializers.ModelSerializer):
+class PerkSerializer(ModelSerializer):
     class Meta:
-        model = Experience
-        fields = (
-            'pk', 'country', 'city', 'name', 'host', 'price', 'address',
-            'start', 'end', 'description', 'category',
-            'created_at', 'updated_at'
-        )
-        read_only_fields = ('pk', 'created_at', 'updated_at')
+        model = Perk
+        fields = "__all__"
