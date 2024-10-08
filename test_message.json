@@ -1,0 +1,35 @@
+
+
+test word 01
+{
+"name":"Hey~ This is test",
+"country":"Seoul",
+"city":"Seoul kangnam",
+"price":"100",
+"rooms":"2",
+"toilets":"2",
+"description":"GooD",
+"address":"YHEE",
+"pet_friendly":"true",
+"category":1,
+"amenities":[2,3],
+"kind":"private_room"
+}
+
+
+test word 02 - About PUT 
+{
+"name": "Updated Room Name",
+"price": 2500,
+"description": "This is an updated description for the room.",
+"category": 1,
+"amenities": [2, 3] 
+}
+
+
+context 이후 Test Message 
+{ "name":"Context Test", "country":"Seoul", "city":"Seoul kangnam", "price":"100", "rooms":"2", "toilets":"2", "description":"GooD", "address":"YHEE", "pet_friendly":"true", "category":1, "amenities":[2,3], "kind":"private_room" } 
+
+
+PUT TEST 
+{"city":"Change for Test"} 

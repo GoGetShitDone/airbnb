@@ -11,16 +11,23 @@ from rest_framework.exceptions import (
 from .models import Amenity, Room
 from categories.models import Category
 from .serializers import AmenitySerializer, RoomListSerializer, RoomDetailSerializer
+from reviews.serializers import ReviewSerializer
+
 
 class Rooms(APIView):
+
     def get(self, request):
         all_rooms = Room.objects.all()
-        serializer = RoomListSerializer(all_rooms, many=True)
+        serializer = RoomListSerializer(
+            all_rooms, 
+            many=True,
+            context={"request": request},
+            )
         return Response(serializer.data)
 
     def post(self, request):
         if request.user.is_authenticated:
-            serializer = RoomDetailSerializer(data=request.data)
+            serializer = RoomDetailSerializer(data=request.data, context={"request": request})
             if serializer.is_valid():
                 category_pk = request.data.get("category")
                 if not category_pk:
@@ -41,9 +48,10 @@ class Rooms(APIView):
                         for amenity_pk in amenities:
                             amenity = Amenity.objects.get(pk=amenity_pk)
                             room.amenities.add(amenity)
-                        serializer = RoomDetailSerializer(room)
+                        serializer = RoomDetailSerializer(room, context={"request": request})
                         return Response(serializer.data)
-                except Exception:
+                except Exception as e:
+                    print(f"Error creating room : {str(e)}")
                     raise ParseError("Amenity not found")
             else:
                 return Response(serializer.errors)
@@ -51,6 +59,7 @@ class Rooms(APIView):
             raise NotAuthenticated
 
 class RoomDetail(APIView):
+
     def get_object(self, pk):
         try:
             return Room.objects.get(pk=pk)
@@ -59,40 +68,27 @@ class RoomDetail(APIView):
 
     def get(self, request, pk):
         room = self.get_object(pk)
-        serializer = RoomDetailSerializer(room)
+        serializer = RoomDetailSerializer(
+            room, 
+            )
         return Response(serializer.data)
 
-    ### Mission Code ###
-    # def put(self, request, pk):
-    #     room = self.get_object(pk)
-    #     if not request.user.is_authenticated:
-    #         raise NotAuthenticated
-    #     if room.owner != request.user:
-    #         raise PermissionDenied
-
     def put(self, request, pk):
-        # 기존: amenity = self.get_object(pk)
-        # 변경: Room 객체를 가져옵니다.
-        room = self.get_object(pk)
         
-        # 새로 추가: 사용자 인증 확인
+        room = self.get_object(pk)
         if not request.user.is_authenticated:
             raise NotAuthenticated
         
-        # 새로 추가: 방 소유자 확인
         if room.owner != request.user:
             raise PermissionDenied
         
-        # 기존: AmenitySerializer 사용
-        # 변경: RoomDetailSerializer 사용, partial=True로 부분 업데이트 허용
         serializer = RoomDetailSerializer(
             room,
             data=request.data,
-            partial=True
+            partial=True,
         )
         
         if serializer.is_valid():
-            # 새로 추가: 카테고리 업데이트 로직
             category_pk = request.data.get("category")
             if category_pk:
                 try:
@@ -104,28 +100,18 @@ class RoomDetail(APIView):
                     raise ParseError("Category not found")
             
             try:
-                # 새로 추가: 트랜잭션 처리로 데이터 일관성 보장
                 with transaction.atomic():
-                    # 기존: updated_amenity = serializer.save()
-                    # 변경: Room 객체 저장
                     updated_room = serializer.save()
-                    
-                    # 새로 추가: 편의시설(amenities) 업데이트 로직
                     amenities = request.data.get("amenities")
                     if amenities:
-                        updated_room.amenities.clear()  # 기존 편의시설 모두 제거
+                        updated_room.amenities.clear() 
                         for amenity_pk in amenities:
                             amenity = Amenity.objects.get(pk=amenity_pk)
-                            updated_room.amenities.add(amenity)  # 새 편의시설 추가
-                    
-                    # 기존: AmenitySerializer(updated_amenity).data
-                    # 변경: RoomDetailSerializer로 업데이트된 방 정보 반환
-                    return Response(RoomDetailSerializer(updated_room).data)
-            # 새로 추가: 존재하지 않는 Amenity에 대한 예외 처리
+                            updated_room.amenities.add(amenity) 
+                    return Response(RoomDetailSerializer(updated_room, context={"request": request}).data)
             except Amenity.DoesNotExist:
                 raise ParseError("Amenity not found")
         else:
-            # 변경 없음: 유효성 검사 실패 시 에러 반환
             return Response(serializer.errors)
 
     def delete(self, request, pk):
@@ -188,32 +174,26 @@ class AmenityDetail(APIView):
         amenity.delete()
         return Response(status=HTTP_204_NO_CONTENT)
 
+class RoomReviews(APIView):
 
+    def get_object(self, pk):
+        try:
+            return Room.objects.get(pk=pk)
+        except Room.DoesNotExist:
+            raise NotFound
 
-# test word 01
-
-# {
-# "name":"Hey~ This is test",
-# "country":"Seoul",
-# "city":"Seoul kangnam",
-# "price":"100",
-# "rooms":"2",
-# "toilets":"2",
-# "description":"GooD",
-# "address":"YHEE",
-# "pet_friendly":"true",
-# "category":1,
-# "amenities":[2,3],
-# "kind":"private_room"
-# }
-
-
-# test word 02 - About PUT 
-
-# {
-#   "name": "Updated Room Name",
-#   "price": 2500,
-#   "description": "This is an updated description for the room.",
-#   "category": 1,
-#   "amenities": [2, 3] 
-# }
+    def get(self, request, pk):
+        try:
+            page = request.query_params.get("page", 1)
+            page = int(page)
+        except ValueError:
+            page = 1
+        page_size = 5
+        start = (page - 1) * page_size
+        end = start + page_size
+        room = self.get_object(pk)
+        serializer = ReviewSerializer(
+            room.reviews.all()[start:end],
+            many=True,
+        )
+        return Response(serializer.data)

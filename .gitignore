@@ -1,3 +1,6 @@
+# config Settings and KEY
+config/settings.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -1,9 +1,10 @@
-from rest_framework.serializers import ModelSerializer
+from rest_framework import serializers
 from .models import Amenity, Room
 from users.serializers import TinyUserSerializer
+from reviews.serializers import ReviewSerializer
 from categories.serializers import CategorySerializer
 
-class AmenitySerializer(ModelSerializer):
+class AmenitySerializer(serializers.ModelSerializer):
     class Meta:
         model = Amenity
         fields = (
@@ -12,7 +13,7 @@ class AmenitySerializer(ModelSerializer):
             "description",
         )
 
-class RoomDetailSerializer(ModelSerializer):
+class RoomDetailSerializer(serializers.ModelSerializer):
     owner = TinyUserSerializer(read_only=True)
     amenities = AmenitySerializer(
         read_only=True,
@@ -21,12 +22,33 @@ class RoomDetailSerializer(ModelSerializer):
     category = CategorySerializer(
         read_only=True,
     )
+    rating = serializers.SerializerMethodField()
+    is_owner = serializers.SerializerMethodField()
+    # reviews = ReviewSerializer(many=True, read_only=True,)
 
     class Meta:
         model = Room
         fields = "__all__"
 
-class RoomListSerializer(ModelSerializer):
+    def get_rating(self, room):
+        return room.rating()
+
+    # 기존 get is_owner 코드 
+    # def get_is_owner(self, room):
+    #     request = self.context["request"]
+    #     return room.owner == request.user
+
+    def get_is_owner(self, room):
+        request = self.context.get("request")
+        if request:
+            return room.owner == request.user
+        return False
+
+class RoomListSerializer(serializers.ModelSerializer):
+
+    rating = serializers.SerializerMethodField()
+    is_owner = serializers.SerializerMethodField()
+
     class Meta:
         model = Room
         fields = (
@@ -35,5 +57,15 @@ class RoomListSerializer(ModelSerializer):
             "country",
             "city",
             "price",
+            "rating",
+            "is_owner",
         )
 
+    def get_rating(self, room):
+        return room.rating()
+
+    def get_is_owner(self, room):
+        request = self.context.get("request")
+        if request:
+            return room.owner == request.user
+        return False
