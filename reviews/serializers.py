@@ -1,8 +1,11 @@
 from rest_framework import serializers
+from users.serializers import TinyUserSerializer
 from .models import Review
 
 class ReviewSerializer(serializers.ModelSerializer):
+
+    user = TinyUserSerializer(read_only = True)
+
     class Meta:
         model = Review
-        fields = ('pk', 'room', 'experience', 'payload', 'rating', 'created_at', 'updated_at')
-        read_only_fields = ('pk', 'created_at', 'updated_at')
+        fields = ('user', 'payload', 'rating')

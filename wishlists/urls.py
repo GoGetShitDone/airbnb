@@ -1,15 +1,6 @@
 from django.urls import path
-from . import views
+from .views import Wishlists
 
 urlpatterns = [
-    path("", views.WishlistViewSet.as_view({
-        "get": "list",
-        "post": "create",
-    })),
-    path("<int:pk>", views.WishlistViewSet.as_view({
-        "get": "retrieve",
-        "put": "update",
-        "patch": "partial_update",
-        "delete": "destroy",
-    })),
+    path("", Wishlists.as_view()),
 ]
