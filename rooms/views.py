@@ -1,4 +1,6 @@
 from django.conf import settings
+from django.utils import timezone
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.views import APIView
 from django.db import transaction
 from rest_framework.status import HTTP_204_NO_CONTENT
@@ -14,7 +16,8 @@ from categories.models import Category
 from .serializers import AmenitySerializer, RoomListSerializer, RoomDetailSerializer
 from reviews.serializers import ReviewSerializer
 from medias.serializers import PhotoSerializer
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from bookings.models import Booking
+from bookings.serializers import PublicBookingSerializer, CreateRoomBookingSerializer
 
 
 class Rooms(APIView):
@@ -234,6 +237,60 @@ class RoomPhotos(APIView):
         if serializer.is_valid():
             photo = serializer.save(room=room)
             serializer = PhotoSerializer(photo)
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors)
+
+
+class RoomBookings(APIView):
+
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_object(self, pk):
+        try:
+            return Room.objects.get(pk=pk)
+        except:
+            raise NotFound
+    
+    def get(self, request, pk):
+        room = self.get_object(pk)
+        now = timezone.localtime(timezone.now()).date()
+
+        # 모든 예약정보 확인
+        all_bookings = Booking.objects.filter(room=room)
+
+        bookings = Booking.objects.filter(
+            room=room,
+            kind=Booking.BookingKindChoices.ROOM,
+            check_in__gte=now,
+        )
+
+        # 디버깅 정보를 포함
+        debug_info = {
+            "current_date": now,
+            "total_bookings": all_bookings.count(),
+            "filtered_bookings": bookings.count(),
+            "all_bookings_dates": list(all_bookings.values_list('check_in', flat=True)),
+            "filtered_bookings_dates": list(bookings.values_list('check_in', flat=True)),
+        }
+
+        serializer = PublicBookingSerializer(bookings, many=True)
+
+        return Response({
+            "debug_info" : debug_info,
+            "bookings": serializer.data
+            })
+
+    def post(self, request, pk):
+        room = self.get_object(pk)
+        serializer = CreateRoomBookingSerializer(data=request.data)
+        if serializer.is_valid():
+            booking = serializer.save(
+                room=room,
+                user=request.user,
+                kind=Booking.BookingKindChoices.ROOM,
+            )
+            serializer = PublicBookingSerializer(booking)
             return Response(serializer.data)
         else:
             return Response(serializer.errors)
