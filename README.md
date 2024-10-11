@@ -34,12 +34,25 @@ Airbnb clone coding
 - 11.4 - amenity 관련 url 만들어야함! 
 
 ### Users
-[] GET PUT /me
-[] POST /user
-[] POST /user/username
-[] POST /user/log-in
-[] POST /user/change-password
-[] POST users/github
+- [ ] GET PUT /me
+- [ ] POST /user
+- [ ] POST /user/username
+- [ ] POST /user/log-in
+- [ ] POST /user/change-password
+- [ ] POST users/github
+
+--- 
+
+### Experiences (TODOS)
+
+- [ ] POST /experiences
+- [ ] GET PUT DELETE /experiences/1
+- [ ] GET /experiences/1/perks
+- [x] GET POST /perks
+- [x] GET PUT DELETE /perks/1
+- [ ] GET POST /experiences/1/bookings
+- [ ] GET PUT DELETE /experiences/1/bookings/2
+
 
 ### 졸업과제
 
@@ -48,11 +61,14 @@ Airbnb clone coding
 
 ##### API Routes
 ModelSerializer 그리고 APIView 를 사용하여 아래 routes 를 구현하세요.
+<!-- tweets -->
 - GET /api/v1/tweets: See all tweets
 - POST /api/v1/tweets: Create a tweet
 - GET /api/v1/tweets/<int:pk>: See a tweet
 - PUT /api/v1/tweets/<int:pk>: Edit a tweet
 - DELETE /api/v1/tweets/<int:pk>: Delete a tweet
+
+<!-- users -->
 - GET /api/v1/users: See all users
 - POST /api/v1/users: Create a user account with password
 - GET /api/v1/users/<int:pk>: See user profile

@@ -26,7 +26,7 @@ class Rooms(APIView):
 
     def get(self, request):
         all_rooms = Room.objects.all()
-        serializer = RoomListSerializer(
+        serializer = serializers.RoomListSerializer(
             all_rooms, 
             many=True,
             context={"request": request},
