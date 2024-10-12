@@ -89,3 +89,9 @@ ModelSerializer 그리고 APIView 를 사용하여 아래 routes 를 구현하�
 
 ### Token : django-rest-knox
 ### JWT : Simple JWT
+
+
+
+
+# TEST 
+- def test_create_amenity(self): 이 부분 작동이 이상함 
