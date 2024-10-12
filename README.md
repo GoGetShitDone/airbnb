@@ -1,7 +1,9 @@
 # airbnb
 Airbnb clone coding
 
-# Refactoring - ViewSet - v1 / 10.05, Sat
+
+# Refactoring - v1 / 10.05, Sat(start) -> ing
+## ViewSet -> APIVIew 로 변경됨! 
 ### 리팩토링 순서 : 모델 확인 -> 시리얼라이저 -> 뷰s -> urls
 
 ## 1. catefories [x]
@@ -14,21 +16,9 @@ Airbnb clone coding
 ## 8. reviews [x]
 ## 9. wishlists [x]
 
-# Refactoring - ViewSet - v1 / 10.06, Sun
-### 리팩토링 순서 : 모델 확인 -> 시리얼라이저 -> 뷰s -> urls
-
-## 1. catefories []
-## 2. tweets []
-## 3. rooms []
-## 4. users []
-## 5. booking []
-## 6. experiences []
-## 7. medias []
-## 8. reviews []
-## 9. wishlists []
 
 
-## 참고 
+# 참고 
 
 ### Rooms 
 - 11.4 - amenity 관련 url 만들어야함! 
@@ -54,7 +44,7 @@ Airbnb clone coding
 - [ ] GET PUT DELETE /experiences/1/bookings/2
 
 
-### 졸업과제
+### 졸업과제 ~ 16.5 
 
 #### Mission:
 - Django Rest Framework을 사용하여, 아래와 같은 기능을 갖고있는 REST API 를 빌드하세요.
@@ -86,3 +76,16 @@ ModelSerializer 그리고 APIView 를 사용하여 아래 routes 를 구현하�
 다음과 같은 URL 과 메소드를 위한 APITestCase 를 작성하세요.
 - /api/v1/tweets: Test GET and POST methods
 - /api/v1/tweets/<int:pk>: Test GET, PUT and DELETE methods
+
+
+# Authentications
+4가지 방식의 Authenticate
+- Session Authentication - 기본적으로 Django 제공
+- Basic Authentication - Custom 가능하지만 사용 안함
+- Token Authentication
+- JWT Authentication
+
+## 추천
+
+### Token : django-rest-knox
+### JWT : Simple JWT
