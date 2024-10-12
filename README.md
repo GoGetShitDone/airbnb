@@ -44,40 +44,6 @@ Airbnb clone coding
 - [ ] GET PUT DELETE /experiences/1/bookings/2
 
 
-### 졸업과제 ~ 16.5 
-
-#### Mission:
-- Django Rest Framework을 사용하여, 아래와 같은 기능을 갖고있는 REST API 를 빌드하세요.
-
-##### API Routes
-ModelSerializer 그리고 APIView 를 사용하여 아래 routes 를 구현하세요.
-<!-- tweets -->
-- GET /api/v1/tweets: See all tweets
-- POST /api/v1/tweets: Create a tweet
-- GET /api/v1/tweets/<int:pk>: See a tweet
-- PUT /api/v1/tweets/<int:pk>: Edit a tweet
-- DELETE /api/v1/tweets/<int:pk>: Delete a tweet
-
-<!-- users -->
-- GET /api/v1/users: See all users
-- POST /api/v1/users: Create a user account with password
-- GET /api/v1/users/<int:pk>: See user profile
-- GET /api/v1/users/<int:pk>/tweets: See tweets by a user
-- PUT /api/v1/users/password: Change password of logged in user.
-- POST /api/v1/users/login: Log user in
-- POST /api/v1/users/logout: Log user out
-
-##### Authentication
-- UsernameAuthentication라는 이름의 authentication class를 빌드하세요.
-- UsernameAuthentication 는 반드시 BaseAuthentication에서 extend 되어야 합니다.
-- X-USERNAME 헤더를 사용하는 유저를 찾으세요.
-
-##### Testing
-다음과 같은 URL 과 메소드를 위한 APITestCase 를 작성하세요.
-- /api/v1/tweets: Test GET and POST methods
-- /api/v1/tweets/<int:pk>: Test GET, PUT and DELETE methods
-
-
 # Authentications
 4가지 방식의 Authenticate
 - Session Authentication - 기본적으로 Django 제공
@@ -90,8 +56,107 @@ ModelSerializer 그리고 APIView 를 사용하여 아래 routes 를 구현하�
 ### Token : django-rest-knox
 ### JWT : Simple JWT
 
-
-
-
 # TEST 
 - def test_create_amenity(self): 이 부분 작동이 이상함 
+
+
+---
+
+### 졸업과제 ~ 16.5 
+
+#### Mission:
+- Django Rest Framework을 사용하여, 아래와 같은 기능을 갖고있는 REST API 를 빌드하세요.
+
+##### API Routes
+ModelSerializer 그리고 APIView 를 사용하여 아래 routes 를 구현하세요.
+
+[x] <!-- tweets -->
+- GET /api/v1/tweets: See all tweets
+- POST /api/v1/tweets: Create a tweet
+- GET /api/v1/tweets/<int:pk>: See a tweet
+- PUT /api/v1/tweets/<int:pk>: Edit a tweet
+- DELETE /api/v1/tweets/<int:pk>: Delete a tweet
+
+[x] <!-- users -->
+- GET /api/v1/users: See all users
+- POST /api/v1/users: Create a user account with password
+- GET /api/v1/users/<int:pk>: See user profile
+- GET /api/v1/users/<int:pk>/tweets: See tweets by a user
+- PUT /api/v1/users/password: Change password of logged in user.
+- POST /api/v1/users/login: Log user in
+- POST /api/v1/users/logout: Log user out
+
+##### Authentication [x]
+- UsernameAuthentication라는 이름의 authentication class를 빌드하세요.
+- UsernameAuthentication 는 반드시 BaseAuthentication에서 extend 되어야 합니다.
+- X-USERNAME 헤더를 사용하는 유저를 찾으세요.
+
+##### Testing [x]
+다음과 같은 URL 과 메소드를 위한 APITestCase 를 작성하세요.
+- /api/v1/tweets: Test GET and POST methods
+- /api/v1/tweets/<int:pk>: Test GET, PUT and DELETE methods
+
+---
+
+# tweets.test.py 세부 내용
+
+## 개요
+- Tweet 관련 API 엔드포인트 테스트 코드.
+- APITestCase 사용.
+- /api/v1/tweets와 /api/v1/tweets/<int:pk> 엔드포인트 테스트.
+
+## 테스트 케이스
+
+1. test_get_tweets
+   - 목적: 모든 트윗 조회 테스트.
+   - 메소드: GET
+   - URL: /api/v1/tweets
+   - 예상 결과: 200 OK, 생성된 트윗 목록 반환.
+
+2. test_create_tweet
+   - 목적: 새 트윗 생성 테스트.
+   - 메소드: POST
+   - URL: /api/v1/tweets
+   - 데이터: {'payload': 'New test tweet'}
+   - 예상 결과: 201 Created, 새 트윗 정보 반환.
+
+3. test_get_tweet_detail
+   - 목적: 특정 트윗 상세 조회 테스트.
+   - 메소드: GET
+   - URL: /api/v1/tweets/<int:pk>
+   - 예상 결과: 200 OK, 해당 트윗 정보 반환.
+
+4. test_update_tweet
+   - 목적: 트윗 수정 테스트.
+   - 메소드: PUT
+   - URL: /api/v1/tweets/<int:pk>
+   - 데이터: {'payload': 'Updated test tweet'}
+   - 예상 결과: 200 OK, 수정된 트윗 정보 반환.
+
+5. test_delete_tweet
+   - 목적: 트윗 삭제 테스트.
+   - 메소드: DELETE
+   - URL: /api/v1/tweets/<int:pk>
+   - 예상 결과: 204 No Content.
+
+6. test_create_tweet_unauthenticated
+   - 목적: 인증되지 않은 사용자의 트윗 생성 시도 테스트.
+   - 메소드: POST
+   - URL: /api/v1/tweets
+   - 예상 결과: 403 Forbidden.
+
+7. test_update_tweet_unauthorized
+   - 목적: 권한 없는 사용자의 트윗 수정 시도 테스트.
+   - 메소드: PUT
+   - URL: /api/v1/tweets/<int:pk>
+   - 예상 결과: 403 Forbidden.
+
+8. test_delete_tweet_unauthorized
+   - 목적: 권한 없는 사용자의 트윗 삭제 시도 테스트.
+   - 메소드: DELETE
+   - URL: /api/v1/tweets/<int:pk>
+   - 예상 결과: 403 Forbidden.
+
+## 설정
+- setUp 메소드에서 테스트용 사용자와 트윗 생성.
+- 인증된 사용자로 대부분의 테스트 실행.

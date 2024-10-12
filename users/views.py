@@ -5,9 +5,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.exceptions import ParseError, NotFound
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.pagination import PageNumberPagination
 from users.models import User
 from . import serializers
+from tweets.models import Tweet
+from tweets.serializers import TweetSerializer
+
 
 class Me(APIView):
     permission_classes = [IsAuthenticated]
@@ -29,21 +33,53 @@ class Me(APIView):
         else:
             return Response(serializer.errors)
 
-
 class Users(APIView):
+
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get(self, request):
+        users = User.objects.all().order_by('id')
+        serializer = serializers.TinyUserSerializer(users, many=True)
+        data = {
+            "authenticated_user": request.user.username if request.user.is_authenticated else None,
+            "users": serializer.data
+        }
+        return Response(data)
+
     def post(self, request):
         password = request.data.get("password")
         if not password:
-            raise ParseError
+            raise ParseError("Password is required.")
+        
         serializer = serializers.PrivateUserSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
             user.set_password(password)
             user.save()
-            serializer = serializers.PrivateUserSerializer(user)
-            return Response(serializer.data)
+            return Response(serializers.PrivateUserSerializer(user).data, status=status.HTTP_201_CREATED)
         else:
-            return Response(serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserProfile(APIView):
+    def get(self, request, pk):
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            raise NotFound
+        serializer = serializers.PrivateUserSerializer(user)
+        return Response(serializer.data)
+
+
+class UserTweets(APIView):
+    def get(self, request, pk):
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            raise NotFound
+        tweets = Tweet.objects.filter(user=user)
+        serializer = TweetSerializer(tweets, many=True)
+        return Response(serializer.data)
 
 
 class PublicUser(APIView):
