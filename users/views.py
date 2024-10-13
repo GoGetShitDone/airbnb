@@ -1,4 +1,5 @@
 import jwt
+from datetime import datetime, timedelta
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from rest_framework.response import Response
@@ -11,6 +12,7 @@ from users.models import User
 from . import serializers
 from tweets.models import Tweet
 from tweets.serializers import TweetSerializer
+
 
 
 class Me(APIView):
@@ -145,6 +147,7 @@ class JWTLogIn(APIView):
 
         if not username or not password:
             raise ParseError
+
         user = authenticate(
             request,
             username=username,
@@ -153,7 +156,10 @@ class JWTLogIn(APIView):
 
         if user:
             token = jwt.encode(
-                {"pk": user.pk},
+                {
+                "pk": user.pk,
+                "exp": datetime.utcnow() + timedelta(hours=2),
+                },
                 settings.SECRET_KEY,
                 algorithm="HS256",
             )
