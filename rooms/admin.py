@@ -1,6 +1,11 @@
 from django.contrib import admin
 from .models import Room, Amenity
+from medias.models import Photo # 이 import 추가
 
+class PhotoInline(admin.TabularInline):  # Inline 클래스 추가
+    model = Photo
+    extra = 0
+    fields = ("file", "description")
 
 @admin.action(description="Set all prices to Zero")
 def reset_prices(model_admin, request, rooms,):
@@ -11,7 +16,7 @@ def reset_prices(model_admin, request, rooms,):
 
 @admin.register(Room)
 class RoomAdmin(admin.ModelAdmin):
-
+    inlines = (PhotoInline,)  # inlines 추가
     actions = (reset_prices,)
 
     list_display = (
