@@ -21,49 +21,94 @@ from bookings.serializers import PublicBookingSerializer, CreateRoomBookingSeria
 
 
 class Rooms(APIView):
-
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get(self, request):
         all_rooms = Room.objects.all()
         serializer = serializers.RoomListSerializer(
-            all_rooms, 
+            all_rooms,
             many=True,
             context={"request": request},
-            )
+        )
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = serializers.RoomDetailSerializer(data=request.data)
-        if serializer.is_valid():
+        print("Received data:", request.data)  # 받은 데이터 확인
+        
+        if not request.user.is_authenticated:
+            return Response({"detail": "Please log in."}, status=401)
+            
+        serializer = serializers.RoomDetailSerializer(
+            data=request.data,
+            context={"request": request}
+        )
+        
+        print("Is valid:", serializer.is_valid())  # 유효성 검사 결과
+        if not serializer.is_valid():
+            print("Validation errors:", serializer.errors)  # 유효성 검사 에러
+            return Response(serializer.errors, status=400)
+            
+        try:
             category_pk = request.data.get("category")
+            print("Category PK:", category_pk)  # 카테고리 PK 확인
+            
             if not category_pk:
                 raise ParseError("Category is required.")
-            try:
-                category = Category.objects.get(pk=category_pk)
-                if category.kind == Category.CategoryKindChoices.EXPERIENCES:
-                    raise ParseError("The category kind should be 'rooms'")
-            except Category.DoesNotExist:
-                raise ParseError("Category not found")
+                
+            category = Category.objects.get(pk=category_pk)
+            if category.kind == Category.CategoryKindChoices.EXPERIENCES:
+                raise ParseError("The category kind should be 'rooms'")
+
             try:
                 with transaction.atomic():
                     room = serializer.save(
                         owner=request.user,
                         category=category,
                     )
+                    print("Room created:", room)  # 생성된 방 정보
+
+                    # amenities 처리
                     amenities = request.data.get("amenities")
-                    for amenity_pk in amenities:
-                        amenity = Amenity.objects.get(pk=amenity_pk)
-                        room.amenities.add(amenity)
-                    serializer = serializers.RoomDetailSerializer(room)
-                    return Response(serializer.data)
-            except Exception:
-                raise ParseError("Amenity not found")
-        else:
-            return Response(
-                serializer.errors,
-                status=HTTP_400_BAD_REQUEST,
-            )
+                    print("Received amenities:", amenities)  # amenities 데이터 확인
+                    
+                    if amenities:
+                        # 리스트가 아니면 리스트로 변환
+                        if not isinstance(amenities, list):
+                            amenities = [amenities]
+                        
+                        # 유효한 amenity_pks만 필터링
+                        valid_amenity_pks = [
+                            pk for pk in amenities 
+                            if pk is not None and str(pk).isdigit()
+                        ]
+                        
+                        print("Valid amenity PKs:", valid_amenity_pks)  # 유효한 amenity PKs 확인
+                        
+                        if valid_amenity_pks:
+                            for amenity_pk in valid_amenity_pks:
+                                try:
+                                    amenity = Amenity.objects.get(pk=amenity_pk)
+                                    room.amenities.add(amenity)
+                                except Amenity.DoesNotExist:
+                                    print(f"Amenity {amenity_pk} not found")  # 없는 amenity 확인
+                                    continue
+
+                    return Response(
+                        serializers.RoomDetailSerializer(
+                            room,
+                            context={"request": request}
+                        ).data
+                    )
+            except Exception as room_error:
+                print(f"Error saving room: {str(room_error)}")  # 방 저장 중 에러
+                raise ParseError(f"Error saving room: {str(room_error)}")
+                
+        except Category.DoesNotExist:
+            print("Category not found")  # 카테고리 없음
+            raise ParseError("Category not found")
+        except Exception as e:
+            print(f"Unexpected error: {str(e)}")  # 예상치 못한 에러
+            raise ParseError(f"Cannot create room: {str(e)}")
 
 class RoomDetail(APIView):
 
@@ -79,11 +124,11 @@ class RoomDetail(APIView):
         room = self.get_object(pk)
         serializer = serializers.RoomDetailSerializer(
             room, 
-            )
+            context={"request": request},
+        )
         return Response(serializer.data)
 
     def put(self, request, pk):
-        
         room = self.get_object(pk)
         if not request.user.is_authenticated:
             raise NotAuthenticated
@@ -113,13 +158,31 @@ class RoomDetail(APIView):
                     updated_room = serializer.save()
                     amenities = request.data.get("amenities")
                     if amenities:
-                        updated_room.amenities.clear() 
-                        for amenity_pk in amenities:
-                            amenity = Amenity.objects.get(pk=amenity_pk)
-                            updated_room.amenities.add(amenity) 
-                    return Response(RoomDetailSerializer(updated_room, context={"request": request}).data)
-            except Amenity.DoesNotExist:
-                raise ParseError("Amenity not found")
+                        if not isinstance(amenities, list):
+                            amenities = [amenities]
+                        
+                        updated_room.amenities.clear()
+                        valid_amenity_pks = [
+                            pk for pk in amenities 
+                            if pk is not None and str(pk).isdigit()
+                        ]
+                        
+                        for amenity_pk in valid_amenity_pks:
+                            try:
+                                amenity = Amenity.objects.get(pk=amenity_pk)
+                                updated_room.amenities.add(amenity)
+                            except Amenity.DoesNotExist:
+                                print(f"Amenity {amenity_pk} not found")
+                                continue
+                                
+                    return Response(
+                        serializers.RoomDetailSerializer(
+                            updated_room,
+                            context={"request": request}
+                        ).data
+                    )
+            except Exception as e:
+                raise ParseError(f"Error updating room: {str(e)}")
         else:
             return Response(serializer.errors)
 
@@ -145,7 +208,7 @@ class Amenities(APIView):
         if serializer.is_valid():
             amenity = serializer.save()
             return Response(
-                AmenitySerializer(amenity).data,
+                serializers.AmenitySerializer(amenity).data,
             )
         else:
             return Response(
@@ -176,7 +239,7 @@ class AmenityDetail(APIView):
         if serializer.is_valid():
             updated_amenity = serializer.save()
             return Response(
-                AmenitySerializer(updated_amenity).data,
+                serializers.AmenitySerializer(updated_amenity).data,
             )
         else:
             return Response(
